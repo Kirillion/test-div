@@ -1,0 +1,25 @@
+services:
+  php:
+    container_name: div-php
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/var/www/html/app
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+  nginx:
+    container_name: div-nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./app:/var/www/html/app
+      - ./docker/etc/nginx:/etc/nginx
+    depends_on:
+      - php
+  db:
+    container_name: div-db
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
