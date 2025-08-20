@@ -52,7 +52,7 @@ $config = [
                 ['class' => 'yii\rest\UrlRule', 'controller' => 'request'],
                 [
                     'class' => 'yii\rest\UrlRule',
-                    'controller' => 'user',
+                    'controller' => 'v1/user',
                     'pluralize' => false,
                     'extraPatterns' => [
                         'POST login' => 'login'
