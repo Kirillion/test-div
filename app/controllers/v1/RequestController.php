@@ -2,7 +2,9 @@
 
 namespace app\controllers\v1;
 
+use app\components\actions\BatchCreateAction;
 use Yii;
+use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
 use yii\filters\auth\HttpBearerAuth;
 use yii\filters\Cors;
@@ -67,5 +69,26 @@ class RequestController extends ActiveController
         Yii::$app->user->enableSession = false;
 
         return $behaviors;
+    }
+
+    public function actions()
+    {
+        $actions = parent::actions();
+        $actions['create'] = [
+            'class' => BatchCreateAction::class,
+            'modelClass' => $this->modelClass,
+        ];
+
+        unset($actions['index']);
+
+        return $actions;
+    }
+
+    public function actionIndex()
+    {
+        $searchModel = new \app\models\RequestSearch();
+        $dataProvider = $searchModel->search(\Yii::$app->request->queryParams);
+
+        return $dataProvider;
     }
 }

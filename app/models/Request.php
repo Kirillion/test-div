@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\components\interfaces\BatchCreateActiveRecordInteface;
 use Yii;
 
 /**
@@ -16,7 +17,7 @@ use Yii;
  * @property int $createdAt
  * @property int|null $updatedAt
  */
-class Request extends \yii\db\ActiveRecord
+class Request extends \yii\db\ActiveRecord implements BatchCreateActiveRecordInteface
 {
 
     /**
@@ -131,7 +132,7 @@ class Request extends \yii\db\ActiveRecord
         if (!$insert) {
             if (array_key_exists('status', $changedAttributes)) {
 
-                if ($this->status == self::STATUS_RESOLVED) {
+                if ($this->status == self::STATUS_RESOLVED && !$this->isEmailSent) {
                     $this->updateAttributes([
                         'updatedAt' => time()
                     ]);
@@ -144,10 +145,52 @@ class Request extends \yii\db\ActiveRecord
 
     private function sendEmail()
     {
-        Yii::$app->mailer->compose('request/answer', ['request' => $this])
+        $isEmailSent = Yii::$app->mailer->compose('request/answer', ['request' => $this])
             ->setFrom(Yii::$app->params['senderEmail'])
             ->setTo($this->email)
             ->setSubject("Ответ на запрос: {$this->id}")
             ->send();
+
+        if ($isEmailSent) {
+            $this->updateAttributes([
+                'isEmailSent' => true,
+                'updatedAt' => time()
+            ]);
+        }
+    }
+
+    public static function batchCreate(array $data): array
+    {
+        $rows = [];
+        $errorRows = [];        
+        // Можно разбить массив на чанки, если ожидается большое количество данных
+        foreach ($data as $datum) {
+            $model = new self();
+            $model->load($datum, '');
+
+            if ($model->validate()) {
+                $rows[] = [
+                    'name' => $model->name,
+                    'email' => $model->email,
+                    'status' => $model->status,
+                    'message' => $model->message,
+                    'comment' => $model->comment,
+                    'isEmailSent' => $model->isEmailSent,
+                    'createdAt' => $model->createdAt,
+                    'updatedAt' => $model->updatedAt,
+                ];
+            } else {
+                $errorRows[] = [
+                    'model' => $model->attributes,
+                    'errors' => $model->getErrors()
+                ];
+            }
+        }
+
+        Yii::$app->db->createCommand()
+            ->batchInsert(self::tableName(), ['name', 'email', 'status', 'message', 'comment', 'isEmailSent', 'createdAt', 'updatedAt'], $rows)
+            ->execute();
+
+        return $errorRows;
     }
 }
