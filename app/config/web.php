@@ -27,7 +27,8 @@ $config = [
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [
-            'errorAction' => 'site/error',
+            'class' => 'yii\web\ErrorHandler',
+            'errorAction' => null,
         ],
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
@@ -49,7 +50,7 @@ $config = [
             'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
-                ['class' => 'yii\rest\UrlRule', 'controller' => 'request'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'v1/request'],
                 [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/user',
